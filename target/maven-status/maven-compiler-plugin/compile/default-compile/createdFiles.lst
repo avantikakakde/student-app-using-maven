@@ -1,0 +1,7 @@
+com\srk\servlet\DeleteStudent.class
+com\srk\servlet\RegistrationController.class
+com\srk\servlet\ViewStudents.class
+com\srk\servlet\EditStudent.class
+com\srk\servlet\SaveEditedStudent.class
+com\srk\dao\StudentDAO.class
+vo\Student.class

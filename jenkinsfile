@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVER_IP    = '3.110.101.35'
+        SSH_CRED_ID  = 'node-app-key'
+        TOMCAT_PATH  = '/var/lib/tomcat10/webapps'
+        TOMCAT_SVC   = 'tomcat10'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/avantikakakde/student-app-using-maven.git'
+            }
+        }
+
+        stage('Build WAR') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Deploy to Tomcat') {
+            steps {
+                sshagent([SSH_CRED_ID]) {
+                    sh """
+                        WAR_FILE=\$(ls target/*.war | head -n 1)
+                        scp -o StrictHostKeyChecking=no \$WAR_FILE ubuntu@${SERVER_IP}:/tmp/
+                        ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
+                            sudo rm -rf ${TOMCAT_PATH}/*
+                            sudo mv /tmp/*.war ${TOMCAT_PATH}/ROOT.war
+                            sudo chown tomcat:tomcat ${TOMCAT_PATH}/ROOT.war
+                            sudo systemctl restart ${TOMCAT_SVC}
+                        '
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "App deployed! Visit: http://${SERVER_IP}:8080/"
+        }
+        failure {
+            echo "Deployment failed."
+        }
+    }
+}
